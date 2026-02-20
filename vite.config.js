@@ -1,10 +1,10 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// https://vitejs.dev/config/
+// Optimized for Vercel Root Deployment
 export default defineConfig({
   plugins: [react()],
-  base: '/Scorpio/', // REQUIRED for GitHub Pages
+  base: '/', // Change this from '/Scorpio/' to '/'
   build: {
     outDir: 'dist',
   }
