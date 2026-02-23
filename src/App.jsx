@@ -1,19 +1,19 @@
 import React, { useState, useEffect, useRef, useMemo, Suspense } from 'react';
 import { Canvas, useFrame } from '@react-three/fiber';
-import { Points, PointMaterial, Float, MeshDistortMaterial } from '@react-three/drei';
+import { Points, PointMaterial } from '@react-three/drei';
 import * as random from 'maath/random';
 import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth, signInWithPopup, GoogleAuthProvider, onAuthStateChanged, signOut } from 'firebase/auth';
 import { getFirestore, doc, collection, onSnapshot, addDoc, deleteDoc, getDoc, setDoc } from 'firebase/firestore';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
-  Plus, Send, History, Settings, X, Pin, Trash2, Crown, Mail, Globe, ShieldCheck, 
-  Cpu, Terminal, Menu, User, CheckCircle2, Microscope, Activity, Binary, RefreshCw, Power, 
-  ShieldAlert, Gavel, Truck, Search, Briefcase, UserCircle, CreditCard, LifeBuoy, Sparkles,
-  FileUp, Laptop, Smartphone, Tablet
+  Plus, Send, History, Settings, X, Trash2, Crown, Globe, ShieldCheck, 
+  Cpu, Menu, CheckCircle2, Microscope, Activity, Binary, RefreshCw, Power, 
+  ShieldAlert, Gavel, Truck, Search, Briefcase, UserCircle, CreditCard, Sparkles,
+  LayoutDashboard, Database, MessageSquare, ChevronLeft, ChevronRight, FileUp
 } from 'lucide-react';
 
-// --- CONFIG ---
+// --- CONFIGURATION ---
 const firebaseConfig = {
   apiKey: "AIzaSyB0as5wtNMh_D472nJPFxa_eBdEgDacI60",
   authDomain: "scropio-89341.firebaseapp.com",
@@ -25,42 +25,41 @@ const firebaseConfig = {
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth = getAuth(app);
 const db = getFirestore(app);
-const appId = "scorpio-enterprise-core";
+const appId = "scorpio-enterprise-core-v3";
 
 const NODES = [
-  { id: 'n1', name: "Science Audit", icon: <Microscope size={18}/>, prompt: "Bio-Regulatory Auditor: Analyze for errors and reproducibility." },
+  { id: 'n1', name: "Science Audit", icon: <Microscope size={18}/>, prompt: "Bio-Regulatory Auditor: Analyze lab notes for errors." },
   { id: 'n2', name: "Legal Log", icon: <Gavel size={18}/>, prompt: "Patent Lawyer: Document actions for invention logging." },
   { id: 'n3', name: "NAMs Report", icon: <ShieldAlert size={18}/>, prompt: "FDA Specialist: Reformat for animal-free reporting." },
-  { id: 'n4', name: "Supply Chain", icon: <Truck size={18}/>, prompt: "Logistics Expert: Global backup supplier identification." },
-  { id: 'n5', name: "IP Hunter", icon: <Search size={18}/>, prompt: "IP Strategist: Molecular structure whitespace analysis." },
-  { id: 'n6', name: "Patent Cliff", icon: <Briefcase size={18}/>, prompt: "Biotech Consultant: Patent extension identification." }
+  { id: 'n4', name: "Supply Chain", icon: <Truck size={18}/>, prompt: "Logistics Expert: Supply chain risk identification." },
+  { id: 'n5', name: "IP Hunter", icon: <Search size={18}/>, prompt: "IP Strategist: Whitespace analysis." },
+  { id: 'n6', name: "Patent Cliff", icon: <Briefcase size={18}/>, prompt: "Consultant: Rare disease extension ID." }
 ];
 
-// --- LOGO FIX ---
-const ScorpioLogo = () => (
-  <div className="flex items-center gap-3 select-none">
-    <img 
-      src="/scorpio-logo.png" 
-      alt="Scorpio" 
-      className="h-9 w-auto brightness-110 drop-shadow-[0_0_10px_rgba(139,17,22,0.4)]"
-      onError={(e) => { e.target.style.display = 'none'; e.target.parentNode.innerHTML += '<span class="font-orbitron text-xl font-black text-white italic">SCORPIO</span>'; }}
-    />
-  </div>
-);
-
-const NeuralVFX = () => {
+// --- COMPONENTS ---
+const NeuralEngine = () => {
   const ref = useRef();
-  const sphere = useMemo(() => random.inSphere(new Float32Array(5000), { radius: 6 }), []);
-  useFrame((state, delta) => { if (ref.current) { ref.current.rotation.x -= delta/25; ref.current.rotation.y -= delta/30; } });
+  const sphere = useMemo(() => random.inSphere(new Float32Array(3000), { radius: 5.5 }), []);
+  useFrame((state, delta) => { if (ref.current) { ref.current.rotation.x -= delta/30; ref.current.rotation.y -= delta/35; } });
   return (
     <group rotation={[0, 0, Math.PI / 4]}>
       <Points ref={ref} positions={sphere} stride={3} frustumCulled={false}>
-        <PointMaterial transparent color="#8B1116" size={0.02} sizeAttenuation depthWrite={false} opacity={0.3} />
+        <PointMaterial transparent color="#8B1116" size={0.015} sizeAttenuation depthWrite={false} opacity={0.5} />
       </Points>
     </group>
   );
 };
 
+const ScorpioLogo = ({ collapsed }) => (
+  <div className="flex items-center gap-3 select-none">
+    <div className="w-8 h-8 flex items-center justify-center bg-crimson/10 rounded-lg border border-crimson/30">
+      <Binary className="text-crimson" size={18} />
+    </div>
+    {!collapsed && <span className="font-orbitron text-lg font-black tracking-[3px] text-white">SCORPIO</span>}
+  </div>
+);
+
+// --- MAIN APP ---
 export default function App() {
   const [view, setView] = useState('loading'); 
   const [user, setUser] = useState(null);
@@ -69,12 +68,11 @@ export default function App() {
   const [activeNode, setActiveNode] = useState(NODES[0]);
   const [messages, setMessages] = useState([]);
   const [history, setHistory] = useState([]);
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isSubscriptionOpen, setIsSubscriptionOpen] = useState(false);
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState(null);
   
-  const fileInputRef = useRef(null); // Hardware Bridge
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     return onAuthStateChanged(auth, async (u) => {
@@ -83,6 +81,7 @@ export default function App() {
         const userRef = doc(db, 'artifacts', appId, 'users', u.uid, 'profile', 'data');
         const snap = await getDoc(userRef);
         if (snap.exists()) setUserData(snap.data());
+        else await setDoc(userRef, { tier: 'GHOST', usageCount: 0 });
         setView('dash');
       } else { setView('auth'); }
     });
@@ -95,13 +94,6 @@ export default function App() {
       setHistory(snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a,b)=>b.timestamp-a.timestamp));
     });
   }, [user]);
-
-  const handleFileUpload = (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    setCommand(prev => prev + ` [File Attached: ${file.name}] `);
-    // Future implementation: Firebase Storage upload logic here
-  };
 
   const handleCommand = async (e) => {
     e.preventDefault();
@@ -118,7 +110,6 @@ export default function App() {
         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
         body: JSON.stringify({ message: command, nodePrompt: activeNode.prompt })
       });
-
       const data = await response.json();
       if (!response.ok) throw new Error(data.message || data.error);
       setMessages(prev => [...prev, { role: 'ai', text: data.result, node: activeNode.name }]);
@@ -131,166 +122,181 @@ export default function App() {
   };
 
   return (
-    <div className="relative min-h-screen bg-[#050506] text-silver font-sans overflow-x-hidden flex flex-col">
+    <div className="min-h-screen bg-[#0A0A0C] text-silver flex overflow-hidden font-sans">
       <style>{`
-        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;500;700&display=swap');
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Inter:wght@300;400;500;600&display=swap');
         .font-orbitron { font-family: 'Orbitron', sans-serif; }
-        .glass-panel { background: rgba(13, 13, 18, 0.96); backdrop-filter: blur(50px); border: 1px solid rgba(139, 17, 22, 0.15); }
-        .glass-card { background: rgba(20, 20, 25, 0.9); border: 1px solid rgba(255, 255, 255, 0.03); }
+        .bg-obsidian { background: #121216; }
+        .bg-graphite { background: #1B1B22; }
+        .border-crimson-soft { border-color: rgba(139, 17, 22, 0.2); }
+        .text-crimson { color: #8B1116; }
+        .bg-crimson { background: #8B1116; }
         ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: #8B1116; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb { background: #1B1B22; border-radius: 10px; }
       `}</style>
 
-      {/* VFX: Lower Z-Index and Pointer Events None */}
-      <div className="fixed inset-0 z-0 opacity-30 pointer-events-none">
+      {/* Atmospheric Background */}
+      <div className="fixed inset-0 z-0 opacity-10 pointer-events-none">
         <Canvas camera={{ position: [0, 0, 5], fov: 45 }}>
-          <ambientLight intensity={0.4} />
-          <pointLight position={[10, 10, 10]} intensity={1.5} color="#8B1116" />
-          <Suspense fallback={null}><NeuralVFX /></Suspense>
+          <Suspense fallback={null}><NeuralEngine /></Suspense>
         </Canvas>
       </div>
 
       <AnimatePresence mode="wait">
         {view === 'loading' && (
-           <motion.div key="l" exit={{ opacity: 0 }} className="fixed inset-0 z-[200] bg-[#050506] flex flex-col items-center justify-center p-8">
-              <div className="w-16 h-16 border-t-2 border-crimson rounded-full animate-spin mb-8" />
-              <p className="font-orbitron text-[10px] font-black tracking-[10px] text-crimson animate-pulse uppercase">Syncing Scorpio...</p>
+           <motion.div key="l" exit={{ opacity: 0 }} className="fixed inset-0 z-[500] bg-[#0A0A0C] flex flex-col items-center justify-center">
+              <div className="w-12 h-12 border-t-2 border-crimson rounded-full animate-spin mb-4" />
+              <p className="font-orbitron text-[9px] tracking-[5px] text-gray-500 uppercase">System Initializing</p>
            </motion.div>
         )}
 
         {view === 'auth' && (
-          <motion.div key="a" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="relative z-50 min-h-screen flex items-center justify-center p-6 bg-black/60 backdrop-blur-sm">
-            <div className="w-full max-w-xl glass-panel p-16 md:p-24 rounded-[5rem] text-center shadow-[0_0_80px_rgba(0,0,0,1)] border-white/5 font-orbitron">
-               <div className="flex justify-center mb-16"><ScorpioLogo /></div>
-               <button onClick={() => signInWithPopup(auth, new GoogleAuthProvider())} className="w-full py-6 glass-card border-white/5 hover:bg-white/5 text-silver font-black uppercase tracking-widest text-[11px] rounded-3xl transition-all flex items-center justify-center gap-5 shadow-2xl"><Globe size={18} className="text-crimson" /> Google Identity Node</button>
+          <div className="relative z-50 w-full flex items-center justify-center p-6">
+            <div className="w-full max-w-md bg-obsidian border border-crimson-soft p-10 rounded-2xl text-center shadow-2xl">
+               <div className="flex justify-center mb-10"><ScorpioLogo /></div>
+               <p className="text-[11px] font-medium uppercase tracking-[2px] text-gray-500 mb-8">Secure Access Portal</p>
+               <button onClick={() => signInWithPopup(auth, new GoogleAuthProvider())} className="w-full py-4 bg-graphite hover:bg-white/5 border border-white/5 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-4 shadow-lg">
+                <Globe size={18} className="text-crimson" /> Authenticate via Google
+               </button>
             </div>
-          </motion.div>
+          </div>
         )}
 
         {view === 'dash' && (
-          <div className="flex-1 flex flex-col relative z-10 overflow-hidden">
-            {/* Header: Interaction Zone Safe */}
-            <header className="h-24 glass-panel border-b border-white/5 flex items-center justify-between px-6 md:px-16 shadow-2xl relative z-20">
-               <div className="flex items-center gap-8">
-                  <button onClick={() => setIsSidebarOpen(true)} className="p-2 hover:text-crimson transition-colors">
-                    <Menu size={28} />
-                  </button>
-                  <ScorpioLogo />
+          <div className="flex-1 flex relative z-10 w-full">
+            {/* --- SIDEBAR (Compact + Structured) --- */}
+            <aside className={`${isSidebarCollapsed ? 'w-20' : 'w-72'} bg-obsidian border-r border-crimson-soft transition-all duration-300 flex flex-col relative`}>
+               <div className="h-20 flex items-center px-6 border-b border-white/5">
+                  <ScorpioLogo collapsed={isSidebarCollapsed} />
                </div>
-               <div className="flex items-center gap-6">
-                  <div className="hidden lg:flex items-center gap-4 px-6 py-2 glass-card rounded-full border-crimson/20">
-                     <div className={`w-2 h-2 rounded-full ${userData.tier === 'GHOST' ? 'bg-crimson animate-pulse' : 'bg-green-500'}`} />
-                     <span className="text-[10px] font-black text-white uppercase tracking-[2px]">{userData.tier} Node Active</span>
-                  </div>
-                  <button onClick={() => setIsSubscriptionOpen(true)} className="flex items-center gap-4 bg-gradient-to-r from-crimson to-red-900 px-8 py-3 rounded-2xl shadow-2xl hover:scale-105 active:scale-95 transition-all">
-                     <Crown size={18} className="text-white" />
-                     <span className="text-[10px] font-black text-white uppercase tracking-[2px] font-orbitron">Upgrade</span>
-                  </button>
-               </div>
-            </header>
 
-            <main className="flex-1 flex flex-col overflow-hidden relative z-10">
-                <div className="flex-1 overflow-y-auto p-8 md:p-20 scrollbar-hide flex flex-col gap-10">
+               <nav className="flex-1 p-4 space-y-1 overflow-y-auto scrollbar-hide">
+                  <p className={`text-[10px] font-bold text-gray-600 uppercase tracking-widest px-3 mb-4 mt-6 ${isSidebarCollapsed && 'hidden'}`}>Control Hub</p>
+                  {[
+                    { id: 'dash', name: 'Dashboard', icon: <LayoutDashboard size={18}/> },
+                    { id: 'nodes', name: 'Neural Nodes', icon: <Database size={18}/> },
+                    { id: 'billing', name: 'Billing/Quota', icon: <CreditCard size={18}/> },
+                    { id: 'settings', name: 'Settings', icon: <Settings size={18}/> }
+                  ].map(item => (
+                    <div key={item.id} className="group flex items-center gap-4 px-3 py-3 rounded-lg hover:bg-white/[0.03] cursor-pointer transition-colors">
+                      <div className="text-gray-500 group-hover:text-crimson">{item.icon}</div>
+                      {!isSidebarCollapsed && <span className="text-[13px] font-medium text-gray-400 group-hover:text-white">{item.name}</span>}
+                    </div>
+                  ))}
+
+                  <p className={`text-[10px] font-bold text-gray-600 uppercase tracking-widest px-3 mb-4 mt-10 ${isSidebarCollapsed && 'hidden'}`}>Intelligence Nodes</p>
+                  {NODES.map(node => (
+                    <div key={node.id} onClick={() => setActiveNode(node)} className={`group flex items-center gap-4 px-3 py-3 rounded-lg cursor-pointer transition-all ${activeNode.id === node.id ? 'bg-crimson/10 border border-crimson/20' : 'hover:bg-white/[0.02]'}`}>
+                      <div className={activeNode.id === node.id ? "text-crimson" : "text-gray-500 group-hover:text-gray-300"}>{node.icon}</div>
+                      {!isSidebarCollapsed && <span className={`text-[13px] font-medium ${activeNode.id === node.id ? 'text-white' : 'text-gray-500 group-hover:text-gray-300'}`}>{node.name}</span>}
+                    </div>
+                  ))}
+               </nav>
+
+               {/* Sidebar Collapser */}
+               <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="absolute -right-3 top-24 w-6 h-6 bg-graphite border border-crimson-soft rounded-full flex items-center justify-center text-gray-500 hover:text-white transition-colors z-20">
+                  {isSidebarCollapsed ? <ChevronRight size={14}/> : <ChevronLeft size={14}/>}
+               </button>
+
+               <div className="p-4 border-t border-white/5 space-y-4">
+                  <div className="flex items-center gap-3 px-3 py-2 bg-black/40 rounded-xl border border-white/5">
+                     <div className="w-8 h-8 rounded-lg bg-crimson flex items-center justify-center font-bold text-white text-xs">{user.email[0].toUpperCase()}</div>
+                     {!isSidebarCollapsed && <div className="flex-1 overflow-hidden"><p className="text-xs font-bold text-white truncate">{user.displayName || 'Auditor'}</p><p className="text-[9px] text-gray-500 uppercase">{userData.tier} Node</p></div>}
+                  </div>
+                  <button onClick={() => signOut(auth)} className="w-full flex items-center gap-4 px-3 py-3 text-gray-500 hover:text-red-500 transition-colors">
+                    <Power size={18}/> {!isSidebarCollapsed && <span className="text-xs font-bold uppercase tracking-widest">Deactivate</span>}
+                  </button>
+               </div>
+            </aside>
+
+            {/* --- MAIN CONTENT AREA --- */}
+            <div className="flex-1 flex flex-col min-w-0 bg-[#0A0A0C]">
+              <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-obsidian/50 backdrop-blur-md">
+                 <div className="flex items-center gap-4">
+                    <h2 className="text-lg font-bold text-white">{activeNode.name}</h2>
+                    <span className="text-[10px] text-gray-600 bg-white/5 px-2 py-1 rounded uppercase tracking-widest font-bold">L3 Processing</span>
+                 </div>
+                 <div className="flex items-center gap-6">
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-green-500/10 border border-green-500/20 rounded-lg">
+                       <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                       <span className="text-[10px] font-bold text-green-500 uppercase">Uplink Stable</span>
+                    </div>
+                    <button className="px-5 py-2 bg-crimson text-white text-[10px] font-bold uppercase tracking-widest rounded-lg shadow-[0_0_20px_rgba(139,17,22,0.3)] hover:scale-105 transition-all">
+                       Upgrade to Spectre
+                    </button>
+                 </div>
+              </header>
+
+              <main className="flex-1 overflow-hidden flex flex-col relative">
+                {/* Chat Stream */}
+                <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-8 scroll-smooth">
                     {messages.length === 0 ? (
-                        <div className="h-full flex flex-col items-center justify-center text-center opacity-30">
-                            <Sparkles size={60} className="mb-6 text-crimson" />
-                            <h2 className="text-4xl md:text-6xl font-light text-white mb-4 italic font-orbitron">Agency Standby.</h2>
-                            <p className="text-[11px] font-black uppercase tracking-[5px]">Select a Node and provide protocol context.</p>
-                        </div>
+                      <div className="h-full flex flex-col items-center justify-center opacity-20">
+                         <Sparkles size={48} className="mb-6 text-crimson" />
+                         <p className="font-orbitron text-xs tracking-[8px] uppercase">Awaiting Protocol Initialization</p>
+                      </div>
                     ) : (
-                        messages.map((m, i) => (
-                            <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className={`max-w-4xl ${m.role === 'ai' ? 'self-start border-l-2 border-crimson bg-crimson/[0.03]' : 'self-end'} p-8 rounded-[2.5rem] glass-card shadow-2xl`}>
-                                <div className="flex items-center gap-3 mb-4 opacity-50 font-orbitron text-[9px] font-black uppercase tracking-widest">
-                                    {m.role === 'ai' ? <Cpu size={14} className="text-crimson" /> : <User size={14} />}
-                                    {m.role === 'ai' ? `${m.node}_AGENT` : 'USER_UPLINK'}
-                                </div>
-                                <p className="text-lg md:text-xl font-light text-silver leading-relaxed whitespace-pre-wrap">{m.text}</p>
-                            </motion.div>
-                        ))
+                      messages.map((m, i) => (
+                        <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${m.role === 'ai' ? 'justify-start' : 'justify-end'}`}>
+                           <div className={`max-w-[80%] p-6 rounded-2xl border ${m.role === 'ai' ? 'bg-graphite border-crimson-soft' : 'bg-crimson text-white border-transparent shadow-lg'}`}>
+                              <p className="text-sm leading-relaxed whitespace-pre-wrap">{m.text}</p>
+                              <div className={`mt-4 text-[9px] font-bold uppercase opacity-40 ${m.role === 'ai' ? 'text-crimson' : 'text-white'}`}>
+                                {m.role === 'ai' ? `${m.node} Agent` : 'Operator Context'}
+                              </div>
+                           </div>
+                        </motion.div>
+                      ))
                     )}
-                    {isProcessing && <div className="self-start p-8 glass-card rounded-[2.5rem] flex items-center gap-4 animate-pulse"><RefreshCw className="animate-spin text-crimson" size={20} /><span className="text-[10px] font-black uppercase tracking-[3px]">Synthesizing...</span></div>}
+                    {isProcessing && <div className="flex justify-start animate-pulse"><div className="bg-graphite p-6 rounded-2xl border border-crimson-soft flex items-center gap-3"><RefreshCw className="animate-spin text-crimson" size={16}/><span className="text-[10px] font-bold uppercase tracking-widest">Synthesizing Node Data...</span></div></div>}
                 </div>
 
-                {/* Interaction Console */}
-                <div className="p-10 bg-gradient-to-t from-[#050506] to-transparent relative z-20">
-                    <div className="max-w-4xl mx-auto flex items-center gap-8 bg-black/50 border border-white/5 p-5 rounded-[4rem] relative shadow-2xl focus-within:border-crimson/40 transition-all">
-                        {/* Hardware Bridge Button */}
-                        <input type="file" ref={fileInputRef} className="hidden" onChange={handleFileUpload} />
-                        <button onClick={() => fileInputRef.current.click()} className="p-5 bg-white/5 hover:bg-white/10 rounded-full text-gray-500 transition-colors">
-                            <Plus size={32} />
-                        </button>
-                        <form onSubmit={handleCommand} className="flex-1 flex items-center">
-                            <input type="text" placeholder={`Instruct ${activeNode.name}...`} value={command} onChange={(e) => setCommand(e.target.value)} className="w-full bg-transparent border-none outline-none text-xl font-light text-white placeholder:text-gray-800" />
-                            <button type="submit" disabled={isProcessing} className={`ml-4 p-8 bg-crimson text-white rounded-full shadow-2xl transition-all ${isProcessing ? 'opacity-50' : 'hover:scale-110 active:scale-90'}`}><Send size={32} /></button>
-                        </form>
+                {/* --- CONSOLE INPUT (Card Style) --- */}
+                <div className="p-8 bg-gradient-to-t from-black to-transparent">
+                    <div className="max-w-4xl mx-auto bg-obsidian border border-crimson-soft rounded-2xl shadow-2xl p-6 transition-all focus-within:border-crimson/50">
+                        <textarea 
+                           className="w-full bg-transparent border-none outline-none resize-none text-sm text-white placeholder:text-gray-700 min-h-[100px]"
+                           placeholder={`Instruct the ${activeNode.name} node...`}
+                           value={command}
+                           onChange={(e) => setCommand(e.target.value)}
+                           onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) handleCommand(e); }}
+                        />
+                        <div className="flex justify-between items-center mt-4 pt-4 border-t border-white/5">
+                           <div className="flex items-center gap-2">
+                              <input type="file" ref={fileInputRef} className="hidden" onChange={(e) => setCommand(p => p + ` [Attach: ${e.target.files[0].name}] `)} />
+                              <button onClick={() => fileInputRef.current.click()} className="p-2 text-gray-500 hover:text-white transition-colors">
+                                 <FileUp size={20} />
+                              </button>
+                              <button className="p-2 text-gray-500 hover:text-white transition-colors">
+                                 <Plus size={20} />
+                              </button>
+                           </div>
+                           <div className="flex items-center gap-6">
+                              <span className="text-[10px] font-bold text-gray-700 uppercase tracking-widest">
+                                {userData.usageCount} / 5 <span className="text-gray-800 ml-1">Executions</span>
+                              </span>
+                              <button onClick={handleCommand} disabled={isProcessing || !command.trim()} className="px-6 py-2.5 bg-crimson hover:bg-red-700 disabled:opacity-30 disabled:hover:bg-crimson text-white text-[10px] font-black uppercase tracking-[3px] rounded-lg shadow-lg transition-all flex items-center gap-3">
+                                 EXECUTE <Send size={14}/>
+                              </button>
+                           </div>
+                        </div>
                     </div>
                 </div>
-            </main>
+              </main>
+            </div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Sidebar: Highest Z-Index */}
+      {/* Global Notifications */}
       <AnimatePresence>
-        {isSidebarOpen && (
-          <>
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setIsSidebarOpen(false)} className="fixed inset-0 bg-black/90 z-[100] backdrop-blur-xl" />
-            <motion.aside initial={{ x: "-100%" }} animate={{ x: 0 }} exit={{ x: "-100%" }} transition={{ type: "spring", damping: 35 }} className="fixed top-0 left-0 h-full w-full max-w-sm glass-panel z-[110] flex flex-col border-r border-white/5 shadow-2xl">
-               <div className="p-10 border-b border-white/5 flex justify-between items-center"><ScorpioLogo /><button onClick={() => setIsSidebarOpen(false)} className="p-2 hover:text-white"><X size={28} /></button></div>
-               <div className="flex-1 overflow-y-auto p-10 space-y-12 scrollbar-hide">
-                  <nav className="space-y-4">
-                     <p className="text-[10px] font-black text-gray-700 uppercase tracking-widest px-4">Portal Settings</p>
-                     {[{ name: 'Identity', icon: <UserCircle size={20}/> }, { name: 'Support', icon: <LifeBuoy size={20}/> }, { name: 'Subscription', icon: <CreditCard size={20}/>, action: () => setIsSubscriptionOpen(true) }].map(link => (
-                        <div key={link.name} onClick={link.action} className="p-5 glass-card rounded-2xl flex items-center gap-6 cursor-pointer hover:border-crimson/40 group transition-all"><div className="text-gray-600 group-hover:text-crimson">{link.icon}</div><span className="text-[11px] font-black text-gray-500 group-hover:text-white uppercase tracking-widest">{link.name}</span></div>
-                     ))}
-                  </nav>
-                  <div className="space-y-4">
-                     <p className="text-[10px] font-black text-gray-700 uppercase tracking-widest px-4">Neural Nodes</p>
-                     {NODES.map(node => (
-                        <div key={node.id} onClick={() => { setActiveNode(node); setIsSidebarOpen(false); }} className={`p-5 rounded-2xl cursor-pointer border transition-all flex items-center gap-6 ${activeNode.id === node.id ? 'border-crimson bg-crimson/10' : 'border-white/5 glass-card'}`}><div className={activeNode.id === node.id ? "text-crimson" : "text-gray-600"}>{node.icon}</div><span className={`text-[11px] font-black uppercase tracking-widest ${activeNode.id === node.id ? 'text-white' : 'text-gray-500'}`}>{node.name}</span></div>
-                     ))}
-                  </div>
-                  <div className="space-y-4 pt-10 border-t border-white/5">
-                     <p className="text-[10px] font-black text-gray-700 uppercase tracking-widest px-4 flex items-center gap-4"><History size={16}/> Intelligence Archive</p>
-                     <div className="space-y-4">
-                        {history.slice(0, 10).map(item => (
-                           <div key={item.id} className="p-6 glass-card rounded-2xl border border-white/5 group transition-all"><p className="text-[11px] text-silver/60 italic line-clamp-2">"{item.text}"</p><div className="mt-4 flex justify-between items-center opacity-30 group-hover:opacity-100"><span className="text-[8px] font-black text-crimson uppercase">{item.node}</span><button onClick={() => deleteDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'history', item.id))}><Trash2 size={14} className="hover:text-red-500" /></button></div></div>
-                        ))}
-                     </div>
-                  </div>
-               </div>
-               <div className="p-10 border-t border-white/5"><button onClick={() => signOut(auth)} className="w-full py-5 rounded-2xl bg-white/5 text-gray-600 font-black uppercase text-[10px] tracking-[4px] flex items-center justify-center gap-4 hover:bg-crimson/10 hover:text-crimson transition-all"><Power size={18}/> Deactivate</button></div>
-            </motion.aside>
-          </>
-        )}
-
-        {isSubscriptionOpen && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-[300] flex items-center justify-center p-6 bg-black/95 backdrop-blur-3xl font-orbitron">
-               <div className="w-full max-w-6xl glass-panel p-16 rounded-[5rem] relative text-center border-white/5 shadow-2xl overflow-hidden">
-                  <button onClick={() => setIsSubscriptionOpen(false)} className="absolute top-10 right-10 text-white/20 hover:text-white transition-colors"><X size={32}/></button>
-                  <h2 className="text-4xl font-black text-white tracking-[10px] mb-12 uppercase italic">Operational Agency</h2>
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-10 text-left font-sans">
-                     {[{ name: 'GHOST', price: '0' }, { name: 'SPECTRE', price: '24', highlight: true }, { name: 'SINGULARITY', price: '99' }].map((tier) => (
-                        <div key={tier.name} className={`p-10 glass-card rounded-[3rem] border border-white/5 ${tier.highlight ? 'border-crimson shadow-[0_0_50px_rgba(139,17,22,0.3)] scale-105' : 'opacity-60'}`}>
-                           <h3 className="font-orbitron text-xl font-black mb-2 text-white italic">{tier.name}</h3><p className="text-4xl font-black mb-8 text-white">${tier.price}</p><button className={`w-full py-5 rounded-2xl text-[10px] font-black uppercase transition-all ${tier.highlight ? 'bg-crimson text-white' : 'bg-white/5 text-gray-400'}`}>Engage</button>
-                        </div>
-                     ))}
-                  </div>
-               </div>
-            </motion.div>
-         )}
-
         {error && (
-          <motion.div initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }} className="fixed bottom-12 right-12 z-[400] glass-card border-l-4 border-crimson p-10 flex items-center gap-8 shadow-2xl max-w-md">
-            <AlertOctagon className="text-crimson animate-pulse" size={36} /><div className="flex-1"><p className="text-[11px] font-black uppercase tracking-[4px] text-white font-orbitron">Neural Block</p><p className="text-[10px] font-bold text-gray-600 uppercase mt-2 leading-relaxed">{error}</p></div><button onClick={() => setError(null)}><X size={20} className="opacity-30 hover:opacity-100" /></button>
+          <motion.div initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }} className="fixed bottom-10 right-10 z-[500] bg-graphite border-l-4 border-crimson p-6 rounded-r-xl shadow-2xl flex items-center gap-6 max-w-sm">
+            <ShieldAlert className="text-crimson shrink-0" size={28} />
+            <div className="flex-1"><p className="text-[11px] font-bold text-white uppercase mb-1">Neural Fault</p><p className="text-[10px] text-gray-500 leading-relaxed uppercase">{error}</p></div>
+            <button onClick={() => setError(null)}><X size={16} className="text-gray-700 hover:text-white" /></button>
           </motion.div>
         )}
       </AnimatePresence>
-
-      <footer className="py-10 px-16 border-t border-white/5 flex flex-col md:flex-row justify-between items-center bg-black/40 backdrop-blur-md italic font-black text-[10px] uppercase tracking-[4px] font-orbitron relative z-20">
-         <span className="text-gray-800">© 2026 SCORPIO. NEURAL DOMAIN SECURED.</span>
-         <div className="flex gap-8 text-gray-900 mt-6 md:mt-0"><span className="hover:text-crimson cursor-pointer">Sovereignty</span><span className="hover:text-crimson cursor-pointer">Legal Encrypt</span></div>
-      </footer>
     </div>
   );
 }
