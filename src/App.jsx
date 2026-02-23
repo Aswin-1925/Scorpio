@@ -10,10 +10,10 @@ import {
   Send, History, Settings, X, Trash2, Crown, Globe, Binary, RefreshCw, Power, 
   Microscope, Gavel, ShieldAlert, Truck, Search, Briefcase, UserCircle, 
   CreditCard, LayoutDashboard, ChevronLeft, ChevronRight, FileUp, Paperclip, 
-  Sparkles, FileText, CheckCircle2
+  Sparkles, FileText
 } from 'lucide-react';
 
-// --- CONFIGURATION ---
+// --- CONFIG ---
 const firebaseConfig = {
   apiKey: "AIzaSyB0as5wtNMh_D472nJPFxa_eBdEgDacI60",
   authDomain: "scropio-89341.firebaseapp.com",
@@ -27,17 +27,17 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const appId = "scorpio-pro-v6";
 
-// --- NODES WITH DESCRIPTIONS (From Excel) ---
+// --- NODES WITH EXPLANATIONS ---
 const NODES = [
-  { id: 'n1', name: "Science Audit", icon: <Microscope size={14}/>, desc: "Analyze lab notes for errors and chemical variables.", prompt: "Bio-Regulatory Auditor mode." },
-  { id: 'n2', name: "Legal Log", icon: <Gavel size={14}/>, desc: "Document actions for invention logs and patent protection.", prompt: "Patent Lawyer mode." },
-  { id: 'n3', name: "NAMs Report", icon: <ShieldAlert size={14}/>, desc: "Reformat data for animal-free (NAMs) regulatory reporting.", prompt: "FDA Specialist mode." },
-  { id: 'n4', name: "Supply Chain", icon: <Truck size={14}/>, desc: "Identify global backup suppliers to prevent trade disruption.", prompt: "Logistics Expert mode." },
-  { id: 'n5', name: "IP Hunter", icon: <Search size={14}/>, desc: "Analyze structures for whitespace not yet patented.", prompt: "IP Strategist mode." },
-  { id: 'n6', name: "Patent Cliff", icon: <Briefcase size={14}/>, desc: "Identify path to 6-month patent extensions.", prompt: "Consultant mode." }
+  { id: 'n1', name: "Science Audit", icon: <Microscope size={14}/>, desc: "Analyze lab notes for scientific errors.", prompt: "Bio-Regulatory Auditor mode." },
+  { id: 'n2', name: "Legal Log", icon: <Gavel size={14}/>, desc: "Document actions for invention logs.", prompt: "Patent Lawyer mode." },
+  { id: 'n3', name: "NAMs Report", icon: <ShieldAlert size={14}/>, desc: "Reformat data for animal-free reports.", prompt: "FDA Specialist mode." },
+  { id: 'n4', name: "Supply Chain", icon: <Truck size={14}/>, desc: "Identify global backup suppliers.", prompt: "Logistics Expert mode." },
+  { id: 'n5', name: "IP Hunter", icon: <Search size={14}/>, desc: "Identify molecular whitespace.", prompt: "IP Strategist mode." },
+  { id: 'n6', name: "Patent Cliff", icon: <Briefcase size={14}/>, desc: "Find Rare Disease extension paths.", prompt: "Consultant mode." }
 ];
 
-// --- LOGO COMPONENT ---
+// --- LOGO COMPONENT (PRO SHIELD) ---
 const ScorpioLogo = ({ size = "sm", collapsed = false }) => (
   <div className="flex items-center gap-2 select-none">
     <div className={`${size === "sm" ? "w-8 h-8" : "w-10 h-10"} flex items-center justify-center bg-crimson/10 rounded-lg border border-crimson/30`}>
@@ -45,21 +45,25 @@ const ScorpioLogo = ({ size = "sm", collapsed = false }) => (
         src="/scorpio-logo.png" 
         alt="" 
         className="h-full w-full object-contain p-1.5"
-        onError={(e) => { e.target.outerHTML = '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B1116" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>'; }}
+        onError={(e) => { 
+          // SVG Recovery Script if PNG fails
+          e.target.style.display = 'none';
+          e.target.parentNode.innerHTML += '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#8B1116" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>';
+        }}
       />
     </div>
     {!collapsed && <span className={`font-orbitron font-black tracking-[2px] text-white ${size === "sm" ? "text-sm" : "text-xl"}`}>SCORPIO</span>}
   </div>
 );
 
-const NeuralVFX = () => {
+const NeuralEngine = () => {
   const ref = useRef();
   const sphere = useMemo(() => random.inSphere(new Float32Array(3000), { radius: 5.5 }), []);
-  useFrame((state, delta) => { if (ref.current) { ref.current.rotation.x -= delta/40; ref.current.rotation.y -= delta/45; } });
+  useFrame((state, delta) => { if (ref.current) { ref.current.rotation.x -= delta/45; ref.current.rotation.y -= delta/50; } });
   return (
     <group rotation={[0, 0, Math.PI / 4]}>
       <Points ref={ref} positions={sphere} stride={3} frustumCulled={false}>
-        <PointMaterial transparent color="#8B1116" size={0.015} sizeAttenuation depthWrite={false} opacity={0.3} />
+        <PointMaterial transparent color="#8B1116" size={0.012} sizeAttenuation depthWrite={false} opacity={0.3} />
       </Points>
     </group>
   );
@@ -76,7 +80,7 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
   const [showTools, setShowTools] = useState(false);
-  const [stagedFiles, setStagedFiles] = useState([]); // Multiple Files Support
+  const [stagedFiles, setStagedFiles] = useState([]); // Multiple files support
   const [error, setError] = useState(null);
   
   const fileInputRef = useRef(null);
@@ -98,13 +102,17 @@ export default function App() {
 
   const handleFileUpload = (e) => {
     const files = Array.from(e.target.files);
-    const maxFiles = isPro ? 10 : 1;
+    const maxAllowed = isPro ? 10 : 1;
     
-    if (files.length > maxFiles) {
-      setError(`Node Restricted: ${userData.tier} allows max ${maxFiles} files.`);
+    if (files.length > maxAllowed) {
+      setError(`Node Restricted: ${userData.tier} allows max ${maxAllowed} files.`);
       return;
     }
-    setStagedFiles(files.slice(0, maxFiles));
+    setStagedFiles(files);
+  };
+
+  const removeStagedFile = (index) => {
+    setStagedFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleCommand = async (e) => {
@@ -112,8 +120,8 @@ export default function App() {
     if (!command.trim() && stagedFiles.length === 0 || isProcessing) return;
 
     const userText = command;
-    const userFiles = [...stagedFiles];
-    setMessages(prev => [...prev, { role: 'user', text: userText, files: userFiles.map(f => f.name) }]);
+    const fileList = stagedFiles.map(f => f.name);
+    setMessages(prev => [...prev, { role: 'user', text: userText, files: fileList }]);
     setIsProcessing(true);
     setCommand("");
     setStagedFiles([]);
@@ -127,7 +135,7 @@ export default function App() {
       });
       const data = await response.json();
       if (!response.ok) throw new Error(data.error);
-      setMessages(prev => [...prev, { role: 'ai', text: data.result }]);
+      setMessages(prev => [...prev, { role: 'ai', text: data.result, node: activeNode.name }]);
       setUserData(prev => ({ ...prev, usageCount: prev.usageCount + 1 }));
     } catch (err) {
       setError(err.message);
@@ -147,8 +155,9 @@ export default function App() {
         ::-webkit-scrollbar-thumb { background: #1B1B22; }
       `}</style>
 
+      {/* VFX Layer */}
       <div className="fixed inset-0 z-0 opacity-10 pointer-events-none">
-        <Canvas camera={{ position: [0, 0, 5], fov: 45 }}><Suspense fallback={null}><NeuralVFX /></Suspense></Canvas>
+        <Canvas camera={{ position: [0, 0, 5], fov: 45 }}><Suspense fallback={null}><NeuralEngine /></Suspense></Canvas>
       </div>
 
       <AnimatePresence mode="wait">
@@ -157,11 +166,11 @@ export default function App() {
         )}
 
         {view === 'auth' && (
-          <div className="relative z-50 w-full flex items-center justify-center p-6">
+          <div className="relative z-50 w-full flex items-center justify-center">
             <div className="w-full max-w-md bg-obsidian border border-white/5 p-12 rounded-2xl text-center shadow-2xl">
                <div className="flex justify-center mb-10"><ScorpioLogo size="lg" /></div>
                <button onClick={() => signInWithPopup(auth, new GoogleAuthProvider())} className="w-full py-4 bg-white/5 hover:bg-white/10 border border-white/5 text-white font-semibold rounded-xl transition-all flex items-center justify-center gap-4">
-                <Globe size={18} className="text-crimson" /> Initialize Node
+                <Globe size={18} className="text-crimson" /> Initialize Scorpio
                </button>
             </div>
           </div>
@@ -172,28 +181,23 @@ export default function App() {
             <aside className={`${isSidebarCollapsed ? 'w-20' : 'w-64'} bg-obsidian border-r border-white/5 transition-all duration-300 flex flex-col`}>
                <div className="h-20 flex items-center px-6 border-b border-white/5"><ScorpioLogo collapsed={isSidebarCollapsed} /></div>
                <nav className="flex-1 p-4 space-y-2">
-                  {[ { id: 'dash', name: 'Workstation', icon: <LayoutDashboard size={18}/> }, { id: 'history', name: 'Archives', icon: <History size={18}/> }].map(item => (
+                  {[ { id: 'dash', name: 'Terminal', icon: <LayoutDashboard size={18}/> }, { id: 'history', name: 'Archives', icon: <History size={18}/> }].map(item => (
                     <div key={item.id} className="group flex items-center gap-4 px-3 py-3 rounded-lg hover:bg-white/[0.03] cursor-pointer transition-colors">
                       <div className="text-gray-500 group-hover:text-crimson">{item.icon}</div>
-                      {!isSidebarCollapsed && <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{item.name}</span>}
+                      {!isSidebarCollapsed && <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{item.name}</span>}
                     </div>
                   ))}
                </nav>
-               <div className="p-4 border-t border-white/5"><button onClick={() => signOut(auth)} className="w-full flex items-center gap-4 px-3 py-3 text-gray-500 hover:text-red-500 transition-colors"><Power size={18}/> {!isSidebarCollapsed && <span className="text-[10px] font-black uppercase">Logout</span>}</button></div>
+               <div className="p-4 border-t border-white/5"><button onClick={() => signOut(auth)} className="w-full flex items-center gap-4 px-3 py-3 text-gray-500 hover:text-red-500 transition-colors"><Power size={18}/> {!isSidebarCollapsed && <span className="text-[10px] font-black uppercase tracking-widest">Logout</span>}</button></div>
             </aside>
 
             <div className="flex-1 flex flex-col min-w-0 bg-[#08080A]">
               <header className="h-20 border-b border-white/5 flex items-center justify-between px-8 bg-obsidian/50 backdrop-blur-md">
                  <div className="flex items-center gap-4">
                     <button onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)} className="p-2 hover:text-white transition-colors"><ChevronLeft size={18} className={isSidebarCollapsed ? "rotate-180" : ""} /></button>
-                    <h2 className="text-[10px] font-black uppercase tracking-[3px] text-white/30">{activeNode.name}</h2>
+                    <h2 className="text-[10px] font-black uppercase tracking-[2px] text-white/30">{activeNode.name} Active</h2>
                  </div>
-                 <div className="flex items-center gap-6">
-                    <div className="hidden lg:flex items-center gap-2 bg-green-500/10 px-3 py-1.5 rounded-lg border border-green-500/20">
-                       <div className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
-                       <span className="text-[9px] font-black text-green-500 uppercase">Secure</span>
-                    </div>
-                 </div>
+                 <div className="flex items-center gap-6"><span className="text-[9px] font-bold text-gray-600 uppercase">Secure Uplink</span></div>
               </header>
 
               <main className="flex-1 overflow-hidden flex flex-col relative">
@@ -203,9 +207,9 @@ export default function App() {
                     ) : (
                       messages.map((m, i) => (
                         <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} className={`flex ${m.role === 'ai' ? 'justify-start' : 'justify-end'}`}>
-                           <div className={`max-w-[75%] p-6 rounded-2xl border ${m.role === 'ai' ? 'bg-graphite border-white/5 text-gray-300 shadow-2xl' : 'bg-crimson/5 border-crimson/20 text-white'}`}>
-                              {m.files && m.files.length > 0 && (
-                                <div className="flex flex-wrap gap-2 mb-4">
+                           <div className={`max-w-[75%] p-6 rounded-2xl border ${m.role === 'ai' ? 'bg-graphite border-white/5 text-gray-300 shadow-2xl' : 'bg-crimson/10 border-crimson/20 text-white'}`}>
+                              {m.files && (
+                                <div className="flex flex-wrap gap-2 mb-3">
                                   {m.files.map(f => <div key={f} className="flex items-center gap-2 p-1.5 bg-black/40 rounded-lg border border-white/5 text-[8px] font-bold text-crimson uppercase"><FileText size={10}/> {f}</div>)}
                                 </div>
                               )}
@@ -214,33 +218,32 @@ export default function App() {
                         </motion.div>
                       ))
                     )}
-                    {isProcessing && <div className="flex justify-start animate-pulse"><div className="bg-graphite p-5 rounded-2xl border border-white/5 text-[9px] font-black uppercase tracking-widest text-gray-500">Synthesizing Node...</div></div>}
+                    {isProcessing && <div className="flex justify-start"><div className="bg-graphite p-6 rounded-2xl border border-white/5 flex items-center gap-3"><RefreshCw className="animate-spin text-crimson" size={14}/><span className="text-[10px] font-bold uppercase tracking-widest text-gray-500">Synthesizing...</span></div></div>}
                 </div>
 
-                {/* --- PRO CONSOLE --- */}
                 <div className="p-8 relative z-20">
                     <div className="max-w-4xl mx-auto relative">
-                        {/* MULTI-FILE STAGED PACKETS */}
+                        {/* MULTI-FILE PACKETS */}
                         <AnimatePresence>
                           {stagedFiles.length > 0 && (
-                            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="absolute bottom-full mb-4 left-0 flex flex-wrap gap-3 max-w-full">
-                               {stagedFiles.map((f, idx) => (
-                                 <div key={idx} className="p-3 bg-graphite border border-crimson/30 rounded-xl shadow-2xl flex items-center gap-4">
+                            <motion.div initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} className="absolute bottom-full mb-4 left-0 flex flex-wrap gap-3">
+                               {stagedFiles.map((f, i) => (
+                                 <div key={i} className="p-3 bg-graphite border border-crimson/30 rounded-xl shadow-2xl flex items-center gap-4">
                                     <div className="p-1.5 bg-crimson/10 rounded-lg text-crimson"><Paperclip size={14}/></div>
                                     <span className="text-[10px] font-bold text-white uppercase truncate max-w-[120px]">{f.name}</span>
-                                    <button onClick={() => setStagedFiles(prev => prev.filter((_, i) => i !== idx))} className="hover:text-white transition-colors"><X size={12}/></button>
+                                    <button onClick={() => removeStagedFile(i)} className="hover:text-white transition-colors"><X size={12}/></button>
                                  </div>
                                ))}
                             </motion.div>
                           )}
                         </AnimatePresence>
 
-                        {/* TOOL HUD (NINJA POPUP) */}
+                        {/* NINJA NODE HUD */}
                         <AnimatePresence>
                           {showTools && (
                             <motion.div 
                               onMouseEnter={() => setShowTools(true)} onMouseLeave={() => setShowTools(false)}
-                              initial={{ y: 15, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 15, opacity: 0 }} 
+                              initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 20, opacity: 0 }} 
                               className="absolute bottom-full mb-4 left-0 w-64 bg-obsidian border border-white/10 rounded-2xl shadow-2xl p-2 z-50 overflow-visible"
                             >
                                {NODES.map(node => (
@@ -253,10 +256,10 @@ export default function App() {
                                     <div className={activeNode.id === node.id ? 'text-crimson' : ''}>{node.icon}</div>
                                     <span className="text-[11px] font-black uppercase tracking-widest">{node.name}</span>
                                     
-                                    {/* TOOLTIP EXPLANATION */}
+                                    {/* TOOLTIP DESC */}
                                     <AnimatePresence>
                                        {hoveredNodeId === node.id && (
-                                          <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="absolute left-full ml-4 top-1/2 -translate-y-1/2 w-48 bg-graphite border border-white/10 p-3 rounded-xl shadow-2xl z-[60]">
+                                          <motion.div initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} className="absolute left-full ml-4 top-1/2 -translate-y-1/2 w-48 bg-graphite border border-white/10 p-3 rounded-xl shadow-2xl z-50">
                                              <p className="text-[9px] font-medium leading-tight text-gray-400 italic">"{node.desc}"</p>
                                           </motion.div>
                                        )}
@@ -269,7 +272,7 @@ export default function App() {
 
                         <div className="bg-obsidian border border-white/10 rounded-2xl shadow-2xl p-4 transition-all focus-within:border-crimson/40">
                             <textarea 
-                               className="w-full bg-transparent border-none outline-none resize-none text-sm text-white placeholder:text-gray-800 min-h-[90px]"
+                               className="w-full bg-transparent border-none outline-none resize-none text-sm text-white placeholder:text-gray-800 min-h-[80px]"
                                placeholder="Ask Scorpio..." value={command}
                                onChange={(e) => setCommand(e.target.value)}
                                onKeyDown={(e) => { if(e.key === 'Enter' && !e.shiftKey) handleCommand(e); }}
@@ -277,12 +280,12 @@ export default function App() {
                             <div className="flex justify-between items-center mt-3 pt-3 border-t border-white/5">
                                <div className="flex items-center gap-1.5">
                                   <input type="file" ref={fileInputRef} className="hidden" multiple={isPro} onChange={handleFileUpload} />
-                                  <button onMouseEnter={() => setShowTools(true)} className="p-2.5 bg-graphite border border-white/5 rounded-xl hover:border-crimson/50 transition-all text-gray-400 hover:text-white shadow-inner"><Binary size={18} /></button>
-                                  <button onClick={() => fileInputRef.current.click()} className="p-2.5 text-gray-500 hover:text-crimson transition-colors"><Paperclip size={20} /></button>
+                                  <button onMouseEnter={() => setShowTools(true)} className="p-2.5 bg-graphite border border-white/5 rounded-xl hover:border-crimson/50 transition-all text-gray-500 hover:text-white"><Binary size={16} /></button>
+                                  <button onClick={() => fileInputRef.current.click()} className="p-2.5 text-gray-600 hover:text-crimson transition-colors"><Paperclip size={18} /></button>
                                </div>
                                <div className="flex items-center gap-6">
-                                  <span className="text-[9px] font-black text-gray-700 uppercase tracking-widest">{userData.usageCount}/{isPro ? '∞' : '5'} CYCLES</span>
-                                  <button onClick={handleCommand} disabled={isProcessing} className="bg-crimson hover:bg-red-700 px-6 py-2.5 rounded-xl text-white text-[10px] font-black uppercase tracking-[3px] transition-all flex items-center gap-3 shadow-lg disabled:opacity-20">EXECUTE <Send size={14}/></button>
+                                  <span className="text-[9px] font-bold text-gray-700 uppercase tracking-widest">{userData.usageCount}/{isPro ? '∞' : '5'} CYCLES</span>
+                                  <button onClick={handleCommand} disabled={isProcessing} className="bg-crimson hover:bg-red-700 px-5 py-2.5 rounded-xl text-white text-[10px] font-black uppercase tracking-[2px] transition-all flex items-center gap-3 shadow-lg disabled:opacity-20">EXECUTE <Send size={12}/></button>
                                </div>
                             </div>
                         </div>
@@ -294,7 +297,7 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* TIER NOTIFICATIONS */}
+      {/* NOTIFICATIONS */}
       <AnimatePresence>
         {error && (
           <motion.div initial={{ x: 400 }} animate={{ x: 0 }} exit={{ x: 400 }} className="fixed bottom-10 right-10 z-[500] bg-graphite border-l-4 border-crimson p-6 rounded-r-xl shadow-2xl flex items-center gap-6 max-w-sm">
