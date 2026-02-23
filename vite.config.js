@@ -5,12 +5,17 @@ import path from 'path';
 export default defineConfig({
   plugins: [react()],
   base: '/',
+  server: {
+    port: 5173,
+    strictPort: true, // Dev stability
+  },
   resolve: {
     alias: { '@': path.resolve(__dirname, './src') },
   },
   build: {
     outDir: 'dist',
     minify: 'esbuild',
+    sourcemap: false,
     rollupOptions: {
       output: {
         manualChunks: {
