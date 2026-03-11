@@ -8,7 +8,7 @@ body {
   background-color: #050506;
   color: #C7CBD1;
   margin: 0;
-  overflow: hidden;
+  overflow-x: hidden;
   font-family: 'Space Grotesk', sans-serif;
 }
 
