@@ -12,7 +12,7 @@ export default function CommandInput({
 
  return(
 
-  <div className="p-6 border-t">
+  <div className="border-t p-6">
 
    <textarea
     ref={textareaRef}

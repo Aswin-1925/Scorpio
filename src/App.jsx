@@ -8,15 +8,27 @@ import NeuralVFX from "./vfx/NeuralVFX"
 function App(){
 
  return(
-  <>
+  <div className="flex h-screen w-screen overflow-hidden">
+
    <NeuralVFX/>
+
    <Sidebar/>
-   <ChatWorkspace/>
-   <CommandInput/>
+
+   <main className="flex flex-col flex-1">
+
+    <ChatWorkspace/>
+
+    <CommandInput/>
+
+   </main>
+
    <SettingsPanel/>
+
    <ErrorToast/>
-  </>
+
+  </div>
  )
+
 }
 
 export default App
