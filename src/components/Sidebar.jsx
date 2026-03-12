@@ -1,7 +1,7 @@
 import { Plus, Search, Power } from "lucide-react"
 
 export default function Sidebar({
- history,
+ history = [],
  searchQuery,
  setSearchQuery,
  startNewChat,
@@ -35,7 +35,7 @@ export default function Sidebar({
 
    <div className="flex-1 overflow-y-auto">
 
-    {history.map(item=>(
+    {history?.map(item=>(
      <div
       key={item.id}
       className="p-3 flex justify-between"
