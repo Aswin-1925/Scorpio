@@ -3,7 +3,7 @@ import { Points, PointMaterial } from "@react-three/drei"
 import * as random from "maath/random"
 import { useMemo, useRef } from "react"
 
-function ParticleField({ theme }) {
+function ParticleField({theme}){
 
  const ref = useRef()
 
@@ -14,7 +14,7 @@ function ParticleField({ theme }) {
  },[])
 
  const sphere = useMemo(
-  ()=>random.inSphere(new Float32Array(particleCount),{radius:5.5}),
+  ()=>random.inSphere(new Float32Array(particleCount * 3),{radius:5.5}),
   [particleCount]
  )
 
@@ -47,7 +47,7 @@ export default function NeuralVFX({theme}){
 
  return(
   <div className="fixed inset-0 -z-10">
-   <Canvas camera={{position:[0,0,6],fov:50}} dpr={[1,2]}>
+   <Canvas camera={{position:[0,0,6],fov:50}}>
      <ParticleField theme={theme}/>
    </Canvas>
   </div>

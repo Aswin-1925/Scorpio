@@ -27,7 +27,7 @@ export default function Sidebar({
    <div className="p-4">
     <input
      value={searchQuery}
-     onChange={e=>setSearchQuery(e.target.value)}
+     onChange={e=>setSearchQuery?.(e.target.value)}
      placeholder="Search"
      className="w-full border p-2"
     />
