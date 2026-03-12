@@ -1,15 +1,15 @@
 import { Canvas, useFrame } from "@react-three/fiber"
 import { Points, PointMaterial } from "@react-three/drei"
 import * as random from "maath/random"
-import { useMemo,useRef } from "react"
+import { useMemo, useRef } from "react"
 
-export default function NeuralVFX({theme}){
+function ParticleField({ theme }) {
 
  const ref = useRef()
 
  const particleCount = useMemo(()=>{
   if(typeof window==="undefined") return 400
-  const count = window.innerWidth<768?200:500
+  const count = window.innerWidth < 768 ? 200 : 500
   return Math.min(count,600)
  },[])
 
@@ -18,7 +18,7 @@ export default function NeuralVFX({theme}){
   [particleCount]
  )
 
- const color = theme==="dark"?"#fff":"#000"
+ const color = theme==="dark" ? "#ffffff" : "#000000"
 
  useFrame((state,delta)=>{
   if(ref.current){
@@ -40,5 +40,16 @@ export default function NeuralVFX({theme}){
     />
    </Points>
   </group>
+ )
+}
+
+export default function NeuralVFX({theme}){
+
+ return(
+  <div className="fixed inset-0 -z-10">
+   <Canvas camera={{position:[0,0,6],fov:50}} dpr={[1,2]}>
+     <ParticleField theme={theme}/>
+   </Canvas>
+  </div>
  )
 }
